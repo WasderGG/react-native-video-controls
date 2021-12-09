@@ -49,6 +49,7 @@ export default class VideoPlayer extends Component {
       muted: this.props.muted,
       volume: this.props.volume,
       rate: this.props.rate,
+      ended: false,
       // Controls
 
       isFullscreen:
@@ -108,6 +109,7 @@ export default class VideoPlayer extends Component {
       togglePlayPause: this._togglePlayPause.bind(this),
       toggleControls: this._toggleControls.bind(this),
       toggleTimer: this._toggleTimer.bind(this),
+      replay: this._replay.bind(this),
     };
 
     /**
@@ -520,6 +522,13 @@ export default class VideoPlayer extends Component {
     let state = this.state;
     state.showTimeRemaining = !state.showTimeRemaining;
     this.setState(state);
+  }
+
+  /**
+   * Replay the video
+   */
+  _replay() {
+    this.seekTo(0);
   }
 
   /**
@@ -1004,6 +1013,15 @@ export default class VideoPlayer extends Component {
       this.state.paused === true
         ? require('./assets/img/play.png')
         : require('./assets/img/pause.png');
+
+    if (this.state.ended) {
+      return this.renderControl(
+        <Image source={require('./assets/img/replay.png')} />,
+        this.methods.replay,
+        styles.controls.playPause,
+      );
+    }
+
     return this.renderControl(
       <Image source={source} />,
       this.methods.togglePlayPause,
@@ -1107,7 +1125,12 @@ export default class VideoPlayer extends Component {
             onProgress={this.events.onProgress}
             onError={this.events.onError}
             onLoad={this.events.onLoad}
-            onEnd={this.events.onEnd}
+            onEnd={data => {
+              this.setState({
+                ended: true,
+              });
+              this.events.onEnd(data);
+            }}
             onSeek={this.events.onSeek}
             style={[styles.player.video, this.styles.videoStyle]}
             source={this.props.source}
