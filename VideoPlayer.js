@@ -55,13 +55,9 @@ export default class VideoPlayer extends Component {
         this.props.isFullScreen || this.props.resizeMode === 'cover' || false,
       showTimeRemaining: this.props.showTimeRemaining,
       showHours: this.props.showHours,
-      volumeTrackWidth: 0,
-      volumeFillWidth: 0,
       seekerFillWidth: 0,
       showControls: this.props.showOnStart,
-      volumePosition: 0,
       seekerPosition: 0,
-      volumeOffset: 0,
       seekerOffset: 0,
       seeking: false,
       originallyPaused: false,
@@ -107,6 +103,7 @@ export default class VideoPlayer extends Component {
      */
     this.methods = {
       toggleFullscreen: this._toggleFullscreen.bind(this),
+      toggleVolume: this._toggleVolume.bind(this),
       togglePlayPause: this._togglePlayPause.bind(this),
       toggleControls: this._toggleControls.bind(this),
       toggleTimer: this._toggleTimer.bind(this),
@@ -117,11 +114,9 @@ export default class VideoPlayer extends Component {
      */
     this.player = {
       controlTimeoutDelay: this.props.controlTimeout || 15000,
-      volumePanResponder: PanResponder,
       seekPanResponder: PanResponder,
       controlTimeout: null,
       tapActionTimeout: null,
-      volumeWidth: 150,
       iconOffset: 0,
       seekerWidth: 0,
       ref: Video,
@@ -656,66 +651,6 @@ export default class VideoPlayer extends Component {
   }
 
   /**
-   * Set the position of the volume slider
-   *
-   * @param {float} position position of the volume handle in px
-   */
-  setVolumePosition(position = 0) {
-    let state = this.state;
-    position = this.constrainToVolumeMinMax(position);
-    state.volumePosition = position + this.player.iconOffset;
-    state.volumeFillWidth = position;
-
-    state.volumeTrackWidth = this.player.volumeWidth - state.volumeFillWidth;
-
-    if (state.volumeFillWidth < 0) {
-      state.volumeFillWidth = 0;
-    }
-
-    if (state.volumeTrackWidth > 150) {
-      state.volumeTrackWidth = 150;
-    }
-
-    this.setState(state);
-  }
-
-  /**
-   * Constrain the volume bar to the min/max of
-   * its track's width.
-   *
-   * @param {float} val position of the volume handle in px
-   * @return {float} contrained position of the volume handle in px
-   */
-  constrainToVolumeMinMax(val = 0) {
-    if (val <= 0) {
-      return 0;
-    } else if (val >= this.player.volumeWidth + 9) {
-      return this.player.volumeWidth + 9;
-    }
-    return val;
-  }
-
-  /**
-   * Get the volume based on the position of the
-   * volume object.
-   *
-   * @return {float} volume level based on volume handle position
-   */
-  calculateVolumeFromVolumePosition() {
-    return this.state.volumePosition / this.player.volumeWidth;
-  }
-
-  /**
-   * Get the position of the volume handle based
-   * on the volume
-   *
-   * @return {float} volume handle position in px based on volume
-   */
-  calculateVolumePositionFromVolume() {
-    return this.player.volumeWidth * this.state.volume;
-  }
-
-  /**
     | -------------------------------------------------------
     | React Component functions
     | -------------------------------------------------------
@@ -727,12 +662,11 @@ export default class VideoPlayer extends Component {
     */
 
   /**
-   * Before mounting, init our seekbar and volume bar
+   * Before mounting, init our seekbar
    * pan responders.
    */
   UNSAFE_componentWillMount() {
     this.initSeekPanResponder();
-    this.initVolumePanResponder();
   }
 
   /**
@@ -755,15 +689,8 @@ export default class VideoPlayer extends Component {
     }
   }
 
-  /**
-   * Upon mounting, calculate the position of the volume
-   * bar based on the volume property supplied to it.
-   */
   componentDidMount() {
-    const position = this.calculateVolumePositionFromVolume();
     let state = this.state;
-    this.setVolumePosition(position);
-    state.volumeOffset = position;
     this.mounted = true;
 
     this.setState(state);
@@ -860,48 +787,8 @@ export default class VideoPlayer extends Component {
     });
   }
 
-  /**
-   * Initialize the volume pan responder.
-   */
-  initVolumePanResponder() {
-    this.player.volumePanResponder = PanResponder.create({
-      onStartShouldSetPanResponder: (evt, gestureState) => true,
-      onMoveShouldSetPanResponder: (evt, gestureState) => true,
-      onPanResponderGrant: (evt, gestureState) => {
-        this.clearControlTimeout();
-      },
-
-      /**
-       * Update the volume as we change the position.
-       * If we go to 0 then turn on the mute prop
-       * to avoid that weird static-y sound.
-       */
-      onPanResponderMove: (evt, gestureState) => {
-        let state = this.state;
-        const position = this.state.volumeOffset + gestureState.dx;
-
-        this.setVolumePosition(position);
-        state.volume = this.calculateVolumeFromVolumePosition();
-
-        if (state.volume <= 0) {
-          state.muted = true;
-        } else {
-          state.muted = false;
-        }
-
-        this.setState(state);
-      },
-
-      /**
-       * Update the offset...
-       */
-      onPanResponderRelease: (evt, gestureState) => {
-        let state = this.state;
-        state.volumeOffset = state.volumePosition;
-        this.setControlTimeout();
-        this.setState(state);
-      },
-    });
+  _toggleVolume() {
+    this.setState({muted: !this.state.muted});
   }
 
   /**
@@ -999,26 +886,17 @@ export default class VideoPlayer extends Component {
   }
 
   /**
-   * Render the volume slider and attach the pan handlers
+   * Render the volume control
    */
   renderVolume() {
-    return (
-      <View style={styles.volume.container}>
-        <View
-          style={[styles.volume.fill, {width: this.state.volumeFillWidth}]}
-        />
-        <View
-          style={[styles.volume.track, {width: this.state.volumeTrackWidth}]}
-        />
-        <View
-          style={[styles.volume.handle, {left: this.state.volumePosition}]}
-          {...this.player.volumePanResponder.panHandlers}>
-          <Image
-            style={styles.volume.icon}
-            source={require('./assets/img/volume.png')}
-          />
-        </View>
-      </View>
+    let source = this.state.muted
+      ? require('./assets/img/volume-off.png')
+      : require('./assets/img/volume-on.png');
+
+    return this.renderControl(
+      <Image source={source} />,
+      this.methods.toggleVolume,
+      styles.volume.icon,
     );
   }
 
@@ -1385,30 +1263,6 @@ const styles = {
     },
   }),
   volume: StyleSheet.create({
-    container: {
-      alignItems: 'center',
-      justifyContent: 'flex-start',
-      flexDirection: 'row',
-      height: 1,
-      marginLeft: 20,
-      marginRight: 20,
-      width: 150,
-    },
-    track: {
-      backgroundColor: '#333',
-      height: 1,
-      marginLeft: 7,
-    },
-    fill: {
-      backgroundColor: '#FFF',
-      height: 1,
-    },
-    handle: {
-      position: 'absolute',
-      marginTop: -24,
-      marginLeft: -24,
-      padding: 16,
-    },
     icon: {
       marginLeft: 7,
     },
