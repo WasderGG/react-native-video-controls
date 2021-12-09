@@ -96,6 +96,7 @@ export default class VideoPlayer extends Component {
       onLoad: this._onLoad.bind(this),
       onPause: this.props.onPause,
       onPlay: this.props.onPlay,
+      onLongPress: this.props.onLongPress,
     };
 
     /**
@@ -1090,6 +1091,7 @@ export default class VideoPlayer extends Component {
   render() {
     return (
       <TouchableWithoutFeedback
+        onLongPress={this.events.onLongPress}
         onPress={this.events.onScreenTouch}
         style={[styles.player.container, this.styles.containerStyle]}>
         <View style={[styles.player.container, this.styles.containerStyle]}>
