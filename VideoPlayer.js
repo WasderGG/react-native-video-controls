@@ -227,6 +227,7 @@ export default class VideoPlayer extends Component {
     let state = this.state;
     if (!state.scrubbing) {
       state.currentTime = data.currentTime;
+      state.ended = false;
 
       if (!state.seeking) {
         const position = this.calculateSeekerPosition();
@@ -528,7 +529,13 @@ export default class VideoPlayer extends Component {
    * Replay the video
    */
   _replay() {
+    let state = this.state;
+
+    state.ended = false;
+    state.paused = false;
+
     this.seekTo(0);
+    this.setState(state);
   }
 
   /**
@@ -1128,6 +1135,7 @@ export default class VideoPlayer extends Component {
             onEnd={data => {
               this.setState({
                 ended: true,
+                paused: true,
               });
               this.events.onEnd(data);
             }}
