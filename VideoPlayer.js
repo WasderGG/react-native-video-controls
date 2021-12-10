@@ -1023,7 +1023,7 @@ export default class VideoPlayer extends Component {
 
     if (this.state.ended) {
       return this.renderControl(
-        <Image source={require('./assets/img/replay.png')} />,
+        <Image source={require('./assets/img/repeat.png')} />,
         this.methods.replay,
         styles.controls.playPause,
       );
