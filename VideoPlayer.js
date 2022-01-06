@@ -826,9 +826,10 @@ export default class VideoPlayer extends Component {
    * consistent <TouchableHighlight>
    * wrapper and styling.
    */
-  renderControl(children, callback, style = {}) {
+  renderControl(children, callback, style = {}, testID) {
     return (
       <TouchableHighlight
+        testID={testID}
         underlayColor="transparent"
         activeOpacity={0.3}
         onPress={() => {
@@ -914,6 +915,7 @@ export default class VideoPlayer extends Component {
       <Image source={source} />,
       this.methods.toggleVolume,
       styles.volume.icon,
+      this.state.muted ? 'VideoPlayerUnmuteButton' : 'VideoPlayerMuteButton',
     );
   }
 
@@ -929,6 +931,9 @@ export default class VideoPlayer extends Component {
       <Image source={source} />,
       this.methods.toggleFullscreen,
       styles.controls.fullscreen,
+      this.state.isFullscreen === true
+        ? 'VideoPlayerFullScreenOffButton'
+        : 'VideoPlayerFullScreenOnButton',
     );
   }
 
@@ -1026,6 +1031,7 @@ export default class VideoPlayer extends Component {
         <Image source={require('./assets/img/repeat.png')} />,
         this.methods.replay,
         styles.controls.playPause,
+        'VideoPlayerReplayButton',
       );
     }
 
@@ -1033,6 +1039,9 @@ export default class VideoPlayer extends Component {
       <Image source={source} />,
       this.methods.togglePlayPause,
       styles.controls.playPause,
+      this.state.paused === true
+        ? 'VideoPlayerContinueButton'
+        : 'VideoPlayerPauseButton',
     );
   }
 
