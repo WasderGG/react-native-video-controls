@@ -98,6 +98,7 @@ export default class VideoPlayer extends Component {
       onPause: this.props.onPause,
       onPlay: this.props.onPlay,
       onLongPress: this.props.onLongPress,
+      onToggleVolume: this.props.onToggleVolume,
     };
 
     /**
@@ -805,7 +806,14 @@ export default class VideoPlayer extends Component {
   }
 
   _toggleVolume() {
-    this.setState({muted: !this.state.muted});
+    let state = this.state;
+
+    state.muted = !state.muted;
+
+    typeof this.events.onToggleVolume === 'function' &&
+      this.events.onToggleVolume(state.muted);
+
+    this.setState(state);
   }
 
   /**
